@@ -58,7 +58,23 @@ logger = get_logger(__name__)
 
 # Load environment variables for API keys
 load_dotenv()
-FRED_API_KEY = os.getenv('FRED_API_KEY')
+
+# Initialize FRED API with key from environment variables or Streamlit secrets
+try:
+    # Try to get FRED API key from Streamlit secrets if available
+    import streamlit as st
+    try:
+        FRED_API_KEY = st.secrets["FRED_API_KEY"]
+        print(f"✅ FRED API key loaded from Streamlit secrets")
+    except (KeyError, FileNotFoundError, ImportError, AttributeError):
+        # Fall back to environment variable
+        FRED_API_KEY = os.getenv('FRED_API_KEY')
+        if FRED_API_KEY:
+            print(f"✅ FRED API key loaded from environment variable")
+except ImportError:
+    # Not running in Streamlit context
+    FRED_API_KEY = os.getenv('FRED_API_KEY')
+
 fred = Fred(api_key=FRED_API_KEY) if FRED_API_KEY else None
 
 # Constants

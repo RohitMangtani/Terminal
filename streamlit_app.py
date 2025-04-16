@@ -1318,31 +1318,40 @@ st.markdown(
 # Check for the presence of the OpenAI API key
 # Read API key directly from .env file to ensure we get the current value
 try:
+    # First check for .env file
     with open(".env", "r") as f:
         env_contents = f.read()
         for line in env_contents.splitlines():
             if line.startswith("OPENAI_API_KEY="):
                 OPENAI_API_KEY = line.split("=", 1)[1]
                 st.sidebar.success(
-                    f"✅ OpenAI API key loaded: {OPENAI_API_KEY[:4]}...{OPENAI_API_KEY[-4:]}"
+                    f"✅ OpenAI API key loaded directly from .env file: {OPENAI_API_KEY[:4]}...{OPENAI_API_KEY[-4:]}"
                 )
                 break
         else:
             OPENAI_API_KEY = None
-            st.error("❌ ERROR: OPENAI_API_KEY not found in .env file")
+            st.warning("OPENAI_API_KEY not found in .env file")
 except Exception as e:
-    st.error(f"❌ ERROR reading .env file: {str(e)}")
+    st.info(f"Note: .env file not found or could not be read. Will try environment variables and Streamlit secrets.")
     OPENAI_API_KEY = None
 
-# Fallback to environment variable if direct read failed
+# If API key not found in .env, try Streamlit secrets
+if not OPENAI_API_KEY:
+    try:
+        OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+        st.sidebar.success(f"✅ OpenAI API key loaded from Streamlit secrets")
+    except (KeyError, FileNotFoundError):
+        st.info("OPENAI_API_KEY not found in Streamlit secrets")
+        
+# As a final fallback, try environment variable
 if not OPENAI_API_KEY:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     if OPENAI_API_KEY:
-        st.sidebar.success(f"✅ OpenAI API key loaded from environment")
+        st.sidebar.success(f"✅ OpenAI API key loaded from environment variable")
     else:
-        st.error("❌ ERROR: OpenAI API key not found in environment")
+        st.error("❌ ERROR: OpenAI API key not found in any location (env file, Streamlit secrets, or environment variables)")
         st.info(
-            "Please add your OpenAI API key to the .env file with the variable name OPENAI_API_KEY"
+            "Please provide your OpenAI API key through one of the supported methods"
         )
         st.stop()
 

@@ -83,7 +83,21 @@ openai.api_key = OPENAI_API_KEY
 DEFAULT_MODEL = os.getenv('OPENAI_MODEL', "gpt-3.5-turbo")
 
 # Initialize FRED API if available
-FRED_API_KEY = os.getenv('FRED_API_KEY')
+try:
+    # Try to get FRED API key from Streamlit secrets if available
+    import streamlit as st
+    try:
+        FRED_API_KEY = st.secrets["FRED_API_KEY"]
+        print(f"✅ FRED API key loaded from Streamlit secrets")
+    except (KeyError, FileNotFoundError, ImportError, AttributeError):
+        # Fall back to environment variable
+        FRED_API_KEY = os.getenv('FRED_API_KEY')
+        if FRED_API_KEY:
+            print(f"✅ FRED API key loaded from environment variable")
+except ImportError:
+    # Not running in Streamlit context
+    FRED_API_KEY = os.getenv('FRED_API_KEY')
+
 fred = Fred(api_key=FRED_API_KEY) if FRED_API_KEY else None
 
 # API retry configuration
